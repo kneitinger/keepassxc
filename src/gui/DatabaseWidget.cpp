@@ -456,21 +456,22 @@ void DatabaseWidget::deleteEntries()
             prompt = tr("Do you really want to delete %n entry(s) for good?", "", selected.size());
         }
 
-        QMessageBox question;
-        question.setIcon(QMessageBox::Question);
-        question.setWindowTitle(tr("Delete entry(s)?"));
-        question.setText(prompt);
-        auto del = question.addButton(tr("Delete"), QMessageBox::ButtonRole::AcceptRole);
-        auto cancel = question.addButton(QMessageBox::Cancel);
-        question.setDefaultButton(cancel);
-        question.exec();
+        auto answer = MessageBox::newQuestion(this, tr("Delete entry(s)?"), prompt,
+                                              MessageBox::Delete | MessageBox::Cancel);
 
-        if (question.clickedButton() == del) {
+        if (answer == MessageBox::Delete) {
             for (Entry* entry : asConst(selectedEntries)) {
                 delete entry;
             }
             refreshSearch();
         }
+        MessageBox::setNewNextAnswer(MessageBox::NoToAll);
+        auto setAnswer = MessageBox::newQuestion(this, tr("Delete entry(s)?"), prompt,
+                                              MessageBox::Delete | MessageBox::Cancel);
+        if (setAnswer != MessageBox::NoToAll) {
+            QApplication::exit(22);
+        }
+
     } else {
         QString prompt;
         if (selected.size() == 1) {

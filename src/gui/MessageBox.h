@@ -19,10 +19,45 @@
 #define KEEPASSX_MESSAGEBOX_H
 
 #include <QMessageBox>
+#include <QPushButton>
+#include <QMap>
 
 class MessageBox
 {
 public:
+    enum Button : uint32_t {
+        // Reimplementation of Qt StandardButtons
+        NoButton        = 0,
+        Ok              = 1 << 1,
+        Open            = 1 << 2,
+        Save            = 1 << 3,
+        Cancel          = 1 << 4,
+        Close           = 1 << 5,
+        Discard         = 1 << 6,
+        Apply           = 1 << 7,
+        Reset           = 1 << 8,
+        RestoreDefaults = 1 << 9,
+        Help            = 1 << 10,
+        SaveAll         = 1 << 11,
+        Yes             = 1 << 12,
+        YesToAll        = 1 << 13,
+        No              = 1 << 14,
+        NoToAll         = 1 << 15,
+        Abort           = 1 << 16,
+        Retry           = 1 << 17,
+        Ignore          = 1 << 18,
+
+        // KeePassXC Buttons
+        Overwrite       = 1 << 19,
+        Delete          = 1 << 20,
+
+        // Internal loop markers. Update Last when new KeePassXC button is added
+        First = Ok,
+        Last = Delete,
+    };
+
+    typedef uint32_t Buttons;
+
     static QMessageBox::StandardButton critical(QWidget* parent,
                                                 const QString& title,
                                                 const QString& text,
@@ -38,6 +73,11 @@ public:
                                                 const QString& text,
                                                 QMessageBox::StandardButtons buttons = QMessageBox::Ok,
                                                 QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
+    static MessageBox::Button newQuestion(QWidget* parent,
+                                        const QString& title,
+                                        const QString& text,
+                                        MessageBox::Buttons buttons = MessageBox::Ok,
+                                        MessageBox::Button defaultButton = MessageBox::NoButton);
     static QMessageBox::StandardButton warning(QWidget* parent,
                                                const QString& title,
                                                const QString& text,
@@ -45,9 +85,15 @@ public:
                                                QMessageBox::StandardButton defaultButton = QMessageBox::NoButton);
 
     static void setNextAnswer(QMessageBox::StandardButton button);
+    static void setNewNextAnswer(MessageBox::Button button);
 
 private:
     static QMessageBox::StandardButton m_nextAnswer;
+    static Button m_newNextAnswer;
+
+    static void addButton(QMessageBox &box, MessageBox::Button button);
+
+    static QMap<QAbstractButton*, Button> m_buttonMap;
 };
 
 #endif // KEEPASSX_MESSAGEBOX_H
