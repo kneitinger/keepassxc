@@ -1179,7 +1179,7 @@ void TestGui::testDatabaseLocking()
 {
     QString origDbName = m_tabWidget->tabText(0);
 
-    MessageBox::setNextAnswer(QMessageBox::Cancel);
+    MessageBox::setNextAnswer(MessageBox::Cancel);
     triggerAction("actionLockDatabases");
 
     QCOMPARE(m_tabWidget->tabName(0), origDbName + " [Locked]");
