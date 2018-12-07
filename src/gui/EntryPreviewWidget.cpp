@@ -43,23 +43,23 @@ EntryPreviewWidget::EntryPreviewWidget(QWidget* parent)
 {
     m_ui->setupUi(this);
 
+    // Header
+    m_ui->panelTotpButton->setIcon(filePath()->icon("actions", "chronometer"));
+    m_ui->panelCloseButton->setIcon(filePath()->icon("actions", "dialog-close"));
+    connect(m_ui->panelTotpButton, SIGNAL(toggled(bool)), m_ui->panelTotpWidget, SLOT(setVisible(bool)));
+    connect(m_ui->panelCloseButton, SIGNAL(clicked()), SLOT(hide()));
+
     // Entry
-    m_ui->entryTotpButton->setIcon(filePath()->icon("actions", "chronometer"));
-    m_ui->entryCloseButton->setIcon(filePath()->icon("actions", "dialog-close"));
     m_ui->togglePasswordButton->setIcon(filePath()->onOffIcon("actions", "password-show"));
 
     m_ui->entryAttachmentsWidget->setReadOnly(true);
     m_ui->entryAttachmentsWidget->setButtonsVisible(false);
 
-    connect(m_ui->entryTotpButton, SIGNAL(toggled(bool)), m_ui->entryTotpWidget, SLOT(setVisible(bool)));
-    connect(m_ui->entryCloseButton, SIGNAL(clicked()), SLOT(hide()));
     connect(m_ui->togglePasswordButton, SIGNAL(clicked(bool)), SLOT(setPasswordVisible(bool)));
     connect(m_ui->entryTabWidget, SIGNAL(tabBarClicked(int)), SLOT(updateTabIndexes()), Qt::QueuedConnection);
     connect(&m_totpTimer, SIGNAL(timeout()), this, SLOT(updateTotpLabel()));
 
     // Group
-    m_ui->groupCloseButton->setIcon(filePath()->icon("actions", "dialog-close"));
-    connect(m_ui->groupCloseButton, SIGNAL(clicked()), SLOT(hide()));
     connect(m_ui->groupTabWidget, SIGNAL(tabBarClicked(int)), SLOT(updateTabIndexes()), Qt::QueuedConnection);
 }
 
@@ -132,23 +132,23 @@ void EntryPreviewWidget::updateEntryHeaderLine()
 {
     Q_ASSERT(m_currentEntry);
     const QString title = m_currentEntry->resolveMultiplePlaceholders(m_currentEntry->title());
-    m_ui->entryTitleLabel->setRawText(hierarchy(m_currentEntry->group(), title));
-    m_ui->entryIcon->setPixmap(preparePixmap(m_currentEntry->iconPixmap(), 16));
+    m_ui->panelTitleLabel->setRawText(hierarchy(m_currentEntry->group(), title));
+    m_ui->panelIcon->setPixmap(preparePixmap(m_currentEntry->iconPixmap(), 16));
 }
 
 void EntryPreviewWidget::updateEntryTotp()
 {
     Q_ASSERT(m_currentEntry);
     const bool hasTotp = m_currentEntry->hasTotp();
-    m_ui->entryTotpButton->setVisible(hasTotp);
-    m_ui->entryTotpWidget->hide();
-    m_ui->entryTotpButton->setChecked(false);
+    m_ui->panelTotpButton->setVisible(hasTotp);
+    m_ui->panelTotpWidget->hide();
+    m_ui->panelTotpButton->setChecked(false);
 
     if (hasTotp) {
         m_totpTimer.start(1000);
         updateTotpLabel();
     } else {
-        m_ui->entryTotpLabel->clear();
+        m_ui->panelTotpLabel->clear();
         m_totpTimer.stop();
     }
 }
@@ -263,8 +263,8 @@ void EntryPreviewWidget::updateEntryAutotypeTab()
 void EntryPreviewWidget::updateGroupHeaderLine()
 {
     Q_ASSERT(m_currentGroup);
-    m_ui->groupTitleLabel->setRawText(hierarchy(m_currentGroup, {}));
-    m_ui->groupIcon->setPixmap(preparePixmap(m_currentGroup->iconPixmap(), 32));
+    m_ui->panelTitleLabel->setRawText(hierarchy(m_currentGroup, {}));
+    m_ui->panelIcon->setPixmap(preparePixmap(m_currentGroup->iconPixmap(), 32));
 }
 
 void EntryPreviewWidget::updateGroupGeneralTab()
@@ -296,9 +296,9 @@ void EntryPreviewWidget::updateTotpLabel()
         const QString totpCode = m_currentEntry->totp();
         const QString firstHalf = totpCode.left(totpCode.size() / 2);
         const QString secondHalf = totpCode.mid(totpCode.size() / 2);
-        m_ui->entryTotpLabel->setText(firstHalf + " " + secondHalf);
+        m_ui->panelTotpLabel->setText(firstHalf + " " + secondHalf);
     } else {
-        m_ui->entryTotpLabel->clear();
+        m_ui->panelTotpLabel->clear();
         m_totpTimer.stop();
     }
 }
