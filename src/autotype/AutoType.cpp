@@ -294,28 +294,36 @@ void AutoType::performGlobalAutoType(const QList<QSharedPointer<Database>>& dbLi
         return;
     }
 
-    QList<AutoTypeMatch> matchList;
+    QList<AutoTypeMatch> windowMatchList;
+    QList<AutoTypeMatch> allSequenceList;
 
     for (const auto& db : dbList) {
         const QList<Entry*> dbEntries = db->rootGroup()->entriesRecursive();
         for (Entry* entry : dbEntries) {
+            // Find unique entry:sequence pairs that match the focused window
             const QSet<QString> sequences = autoTypeSequences(entry, m_windowTitleForGlobal).toSet();
             for (const QString& sequence : sequences) {
                 if (!sequence.isEmpty()) {
-                    matchList << AutoTypeMatch(entry, sequence);
+                    windowMatchList << AutoTypeMatch(entry, sequence);
+                }
+            }
+            // Find all unique entry:sequence pairs
+            const QSet<QString> allSequences = autoTypeSequences(entry).toSet();
+            for (const QString& sequence : allSequences) {
+                if (!sequence.isEmpty()) {
+                    allSequenceList << AutoTypeMatch(entry, sequence);
                 }
             }
         }
     }
 
-    if (matchList.isEmpty()) {
+    // allSequenceList being empty implies that windowMatchList is also empty
+    if (allSequenceList.isEmpty()) {
         if (qobject_cast<QApplication*>(QCoreApplication::instance())) {
             auto* msgBox = new QMessageBox();
             msgBox->setAttribute(Qt::WA_DeleteOnClose);
             msgBox->setWindowTitle(tr("Auto-Type - KeePassXC"));
-            msgBox->setText(tr("Couldn't find an entry that matches the window title:")
-                                .append("\n\n")
-                                .append(m_windowTitleForGlobal));
+            msgBox->setText(tr("Could not find auto-type sequences in any entries"));
             msgBox->setIcon(QMessageBox::Information);
             msgBox->setStandardButtons(QMessageBox::Ok);
             msgBox->show();
@@ -325,8 +333,8 @@ void AutoType::performGlobalAutoType(const QList<QSharedPointer<Database>>& dbLi
 
         m_inGlobalAutoTypeDialog.unlock();
         emit autotypeRejected();
-    } else if ((matchList.size() == 1) && !config()->get("security/autotypeask").toBool()) {
-        executeAutoTypeActions(matchList.first().entry, nullptr, matchList.first().sequence, m_windowForGlobal);
+    } else if ((windowMatchList.size() == 1) && !config()->get("security/autotypeask").toBool()) {
+        executeAutoTypeActions(windowMatchList.first().entry, nullptr, windowMatchList.first().sequence, m_windowForGlobal);
         m_inGlobalAutoTypeDialog.unlock();
     } else {
         auto* selectDialog = new AutoTypeSelectDialog();
@@ -335,7 +343,11 @@ void AutoType::performGlobalAutoType(const QList<QSharedPointer<Database>>& dbLi
         connect(selectDialog, SIGNAL(matchActivated(AutoTypeMatch)), SLOT(performAutoTypeFromGlobal(AutoTypeMatch)));
         connect(selectDialog, SIGNAL(rejected()), SLOT(autoTypeRejectedFromGlobal()));
 
-        selectDialog->setMatchList(matchList);
+        if (!windowMatchList.isEmpty()) {
+            selectDialog->setMatchList(windowMatchList);
+        } else {
+            selectDialog->setMatchList(allSequenceList);
+        }
 #ifdef Q_OS_MACOS
         m_plugin->raiseOwnWindow();
         Tools::wait(200);
